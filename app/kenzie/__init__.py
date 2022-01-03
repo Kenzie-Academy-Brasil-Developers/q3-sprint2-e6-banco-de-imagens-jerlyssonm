@@ -17,7 +17,6 @@ def upload():
     request.files['file'].save('/tmp/file')
     name = request.files['file'].filename
     file_length = os.stat('/tmp/file').st_size
-    print(name)
     if file_length > MAX_SIZE_AUTORIZATION:
         return {'message': f'Sorry the maximum size per image is {MAX_CONTENT_LENGTH}MB'},413
     elif verification(name):
@@ -42,18 +41,21 @@ def download(file_name):
     extension = file_name[-3::]
     if not extension in ALLOWED_EXTENSIONS:
         return {'message': 'file not found.'}, 404
-    return donwload_by_name(file_name,FILES_DIRECTORY,extension)
+    else:
+        return donwload_by_name(file_name,FILES_DIRECTORY,extension)
 
 @app.get('/download-zip/')
 def download_dir_as_zip():
     extension = request.args.get('file_extension')
     ratio = int(request.args.get('compression_ratio', 1))
     path = FILES_DIRECTORY
-    if not extension == None:
+    if extension == None:
+        return {'message': "Parametro incorreto"}, 404
+    elif not extension == None:
         path = extension
     try:
         zipping(extension, ratio)
         return send_from_directory('/tmp', path=f"{path}.zip", as_attachment=True), 200
     except:
         return {'message': f"{extension} file not found"}, 404
-
+    

@@ -7,8 +7,9 @@ MAX_CONTENT_LENGTH = int(os.getenv('MAX_CONTENT_LENGTH'))
 MAX_SIZE_AUTORIZATION = MAX_CONTENT_LENGTH * 1048576
 
 def create_directory(name):
-    """criar um diretorio em seu local atual"""
+    """criar um diretorio em seu local atual"""    
     os.mkdir(name)
+
 
 def save_item(list):
     """salva os items em pastas com o nome de suas extensões"""
@@ -25,10 +26,14 @@ def save_item(list):
         else:
             return 'error'
 
+
 def list_by_extension(extension):
     """lista os items por extensão"""
-    out = os.listdir(f'./{FILES_DIRECTORY}/{extension}/')
-    return jsonify(out)
+    try:
+        out = os.listdir(f'./{FILES_DIRECTORY}/{extension}/')
+        return jsonify(out)
+    except FileNotFoundError:
+        return {'message': 'file not found.'},404
 
 def list_all_items():
     """lista todos os arquivos do diretorio"""
@@ -39,6 +44,7 @@ def list_all_items():
             out.append(items)
     return jsonify(out)
 
+
 def donwload_by_name(file_name,local,extension):
     """solicita o download com as informações fornecidas corretamente"""
     path = os.getcwd()
@@ -46,12 +52,11 @@ def donwload_by_name(file_name,local,extension):
     all_path = safe_join(files_path, extension)
     files_list = os.listdir(all_path)
 
-    try:
+    try:        
         out = safe_join(all_path, file_name)
-        return send_file(out, as_attachment=True)    
-    except FileNotFoundError:
-    # if not file_name in files_list:
-        return {'message': 'file not found.'}, 404
+        return send_file(out, as_attachment=True)
+    except :
+        return {'message': 'file not found.'},404
 
     
 
@@ -68,11 +73,14 @@ def zipping(extension=None, compression_ratio=1):
     else:
         os.system(f"cd {FILES_DIRECTORY}/{extension.lower()} && zip -{compression_ratio} {extension}.zip * && mv {extension}.zip /tmp")
 
+
 def verification(file_name):
     """Verifica se o nome passado por paramentro ja existe no diretorio"""
+
     dir_father = os.listdir(f"./{FILES_DIRECTORY}")
     for i in dir_father:
         for img in os.listdir(f"./{FILES_DIRECTORY}/{i}"):
             if img == file_name:
                 return True
+
     return False
