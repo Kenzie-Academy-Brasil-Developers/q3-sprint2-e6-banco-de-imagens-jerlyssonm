@@ -46,11 +46,13 @@ def donwload_by_name(file_name,local,extension):
     all_path = safe_join(files_path, extension)
     files_list = os.listdir(all_path)
 
-    if not file_name in files_list:
-        return {'message': 'file not found.'} , 404
+    try:
+        out = safe_join(all_path, file_name)
+        return send_file(out, as_attachment=True)    
+    except FileNotFoundError:
+    # if not file_name in files_list:
+        return {'message': 'file not found.'}, 404
 
-    out = safe_join(all_path, file_name)
-    return send_file(out, as_attachment=True)    
     
 
 def zipping(extension=None, compression_ratio=1):

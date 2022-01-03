@@ -19,13 +19,13 @@ def upload():
     file_length = os.stat('/tmp/file').st_size
     print(name)
     if file_length > MAX_SIZE_AUTORIZATION:
-        return {'message': f'Sorry the maximum size per image is {MAX_CONTENT_LENGTH}MB'}
+        return {'message': f'Sorry the maximum size per image is {MAX_CONTENT_LENGTH}MB'},413
     elif verification(name):
-        return {'message': 'this name already exists.'}
+        return {'message': 'this name already exists.'},409
     else:
         recebidos = request.files.items()
         if  save_item(recebidos) == 'error':
-            return {'message': 'This extension is not allowed.'}
+            return {'message': 'This extension is not allowed.'},415
         else:
             return {"message": f"Saved images"}
 
