@@ -3,30 +3,22 @@ from .image import *  #TODAS FUNÇỖES USADAS AQUI ESTÃO SENDO IMPORTADA DE im
 import os
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
 root = os.listdir()
 if f'{FILES_DIRECTORY}' not in root:
-    create_directory(f"./{FILES_DIRECTORY}")
+    create_directory(f'./{FILES_DIRECTORY}')
 
+@app.errorhandler(413)
+def size_error(_):
+    return {'message': f'Sorry the maximum size per image is {MAX_CONTENT_LENGTH} bytes equivalent 1MB!'},413
 @app.get('/')
 def home():
     return "<h1>Entrega 6 - Banco de Imagens</h1>"
 
 @app.post('/upload')
-def upload():    
-    request.files['file'].save('/tmp/file')
-    name = request.files['file'].filename
-    file_length = os.stat('/tmp/file').st_size
-    if file_length > MAX_SIZE_AUTORIZATION:
-        return {'message': f'Sorry the maximum size per image is {MAX_CONTENT_LENGTH}MB'},413
-    elif verification(name):
-        return {'message': 'this name already exists.'},409
-    else:
-        recebidos = request.files.items()
-        if  save_item(recebidos) == 'error':
-            return {'message': 'This extension is not allowed.'},415
-        else:
-            return {"message": f"Saved images"}
+def upload():  
+    return save_item()  
 
 @app.get('/files/<extension>')
 def list_files_by_extension(extension):    
@@ -47,15 +39,15 @@ def download(file_name):
 @app.get('/download-zip/')
 def download_dir_as_zip():
     extension = request.args.get('file_extension')
-    ratio = int(request.args.get('compression_ratio', 1))
+    ratio = request.args.get('compression_ratio', 1)
     path = FILES_DIRECTORY
     if extension == None:
-        return {'message': "Parametro incorreto"}, 404
+        return {'message': 'Incorrect parameter'}, 404
     elif not extension == None:
         path = extension
     try:
         zipping(extension, ratio)
-        return send_from_directory('/tmp', path=f"{path}.zip", as_attachment=True), 200
+        return send_from_directory('/tmp', path=f'{path}.zip', as_attachment=True), 200
     except:
-        return {'message': f"{extension} file not found"}, 404
+        return {'message': f'{extension} file not found'}, 404
     

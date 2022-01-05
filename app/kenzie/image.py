@@ -1,34 +1,42 @@
-from flask import jsonify, safe_join,send_file
+from flask import jsonify, safe_join,send_file,request
 import os
 
 ALLOWED_EXTENSIONS = os.getenv('ALLOWED_EXTENSIONS').split(',')
 FILES_DIRECTORY = os.getenv('FILES_DIRECTORY')
 MAX_CONTENT_LENGTH = int(os.getenv('MAX_CONTENT_LENGTH'))
-MAX_SIZE_AUTORIZATION = MAX_CONTENT_LENGTH * 1048576
+MAX_SIZE_AUTORIZATION = MAX_CONTENT_LENGTH
 
 def create_directory(name):
-    """criar um diretorio em seu local atual"""    
+    """create a directory in your current location with subfolders named extensions"""    
     os.mkdir(name)
+    [os.mkdir(f'{name}/{i}') for i in ALLOWED_EXTENSIONS]
 
 
-def save_item(list):
-    """salva os items em pastas com o nome de suas extensões"""
-    for i in list:
-        folders = os.listdir(f'./{FILES_DIRECTORY}')
-        i_name = i[1].filename
-        extension = i_name[-3::].lower()
-        if extension in ALLOWED_EXTENSIONS:
-            if extension not in folders:
-                create_directory(f'./{FILES_DIRECTORY}/{extension}')
-                i[1].save(f'./{FILES_DIRECTORY}/{extension}/{i_name}')
-            else:
-                i[1].save(f'./{FILES_DIRECTORY}/{extension}/{i_name}')
-        else:
-            return 'error'
+def save_item():
+    """saves the items in folders named after their extensions"""
+    
+    files  = request.files
+    file = files[list(files)[0]]
+    file_name = file.filename
+    extension = file_name[-3::].lower()
+
+
+    if not extension in ALLOWED_EXTENSIONS:
+        return {'message': 'This extension is not authorized by the admis.'},415
+
+    path = safe_join(FILES_DIRECTORY, extension)
+
+
+    if verification_name(file_name):
+        return {'message': 'this name already exists.'},409
+
+    file.save(safe_join(path, file_name))
+    return {"message": "Saved Images"}, 201
+
 
 
 def list_by_extension(extension):
-    """lista os items por extensão"""
+    """lists the items by extension"""
     try:
         out = os.listdir(f'./{FILES_DIRECTORY}/{extension}/')
         return jsonify(out)
@@ -36,7 +44,7 @@ def list_by_extension(extension):
         return {'message': 'file not found.'},404
 
 def list_all_items():
-    """lista todos os arquivos do diretorio"""
+    """lists all the files in the directory"""
     current_dirs = os.listdir(f'./{FILES_DIRECTORY}/')
     out = []
     for folder in current_dirs:
@@ -46,7 +54,7 @@ def list_all_items():
 
 
 def donwload_by_name(file_name,local,extension):
-    """solicita o download com as informações fornecidas corretamente"""
+    """requests the download with the correctly provided information"""
     path = os.getcwd()
     files_path = safe_join(path, local)
     all_path = safe_join(files_path, extension)
@@ -56,31 +64,30 @@ def donwload_by_name(file_name,local,extension):
         out = safe_join(all_path, file_name)
         return send_file(out, as_attachment=True)
     except :
-        return {'message': 'file not found.'},404
-
-    
+        return {'message': 'file not found.'},404    
 
 def zipping(extension=None, compression_ratio=1):
-    """comprime o aquivo antes de executar o download do diretorio, solicitando por paramento a extensão e o ratio da comprensão"""
+    """compresses the file before downloading it from the directory, asking for the extension and compression ratio in return"""
     if compression_ratio < 0:
         compression_ratio = 0
     if compression_ratio > 9:
         compression_ratio = 9
     
     if extension == None:
-        folders = [dir_root.split('/')[-1] for dir_root, dir_files ,files in os.walk(f"{FILES_DIRECTORY}") if len(files) > 0]
+        folders = [dir_root.split('/')[-1] for dir_root, _ ,files in os.walk(f"{FILES_DIRECTORY}") if len(files) > 0]
         os.system(f"cd {FILES_DIRECTORY} && zip -r {FILES_DIRECTORY}.zip {' '.join(folders)} && mv {FILES_DIRECTORY}.zip /tmp")
     else:
         os.system(f"cd {FILES_DIRECTORY}/{extension.lower()} && zip -{compression_ratio} {extension}.zip * && mv {extension}.zip /tmp")
 
 
-def verification(file_name):
-    """Verifica se o nome passado por paramentro ja existe no diretorio"""
+def verification_name(file_name):
+    """Checks if the name passed by paramentro already exists in the directory"""
 
     dir_father = os.listdir(f"./{FILES_DIRECTORY}")
     for i in dir_father:
         for img in os.listdir(f"./{FILES_DIRECTORY}/{i}"):
             if img == file_name:
                 return True
-
+    
     return False
+
