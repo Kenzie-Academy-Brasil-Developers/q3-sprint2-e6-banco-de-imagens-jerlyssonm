@@ -4,7 +4,6 @@ import os
 ALLOWED_EXTENSIONS = os.getenv('ALLOWED_EXTENSIONS').split(',')
 FILES_DIRECTORY = os.getenv('FILES_DIRECTORY')
 MAX_CONTENT_LENGTH = int(os.getenv('MAX_CONTENT_LENGTH'))
-MAX_SIZE_AUTORIZATION = MAX_CONTENT_LENGTH
 
 def create_directory(name):
     """create a directory in your current location with subfolders named extensions"""    
